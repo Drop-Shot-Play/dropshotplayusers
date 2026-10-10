@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drop Shot Play Members</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  /* Drop Shot Play members viewer. Read-only. Owner sign-in only. */
+  :root {
+    --green: #1c6b57; --gold: #e3b05a; --gold-deep: #c2872f; --paper: #f6f2ea; --surface: #fcf9f3;
+    --ink: #0c2722; --muted: #5a6170; --line: #ddd5c4; --white: #fff; --red: #b3261e;
+    --fd: "Bricolage Grotesque", system-ui, sans-serif; --fb: "Inter", system-ui, sans-serif; --fm: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font: 15px/1.45 var(--fb); -webkit-text-size-adjust: 100%; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 14px 16px 40px; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .wordmark { font: 600 13px var(--fb); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-deep); flex: 1; }
+  .who { font-size: 13px; color: var(--muted); }
+  button { font: 600 13px var(--fb); border-radius: 999px; padding: 7px 14px; cursor: pointer; border: 1px solid var(--green); color: var(--green); background: transparent; }
+  button.primary { background: var(--green); color: var(--paper); }
+  button:disabled { opacity: .5; cursor: default; }
+  h1 { font: 800 26px/1.1 var(--fd); margin: 18px 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  .notice { background: var(--white); border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 14px; }
+  .notice.err { border-left-color: var(--red); }
+  .notice code { font: 500 12.5px var(--fm); background: var(--paper); padding: 1px 5px; border-radius: 4px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 14px 0; }
+  .stat { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .stat b { display: block; font: 800 26px/1 var(--fd); color: var(--green); font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 12px; color: var(--muted); }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 10px 0 12px; }
+  .controls input, .controls select { font: 14px var(--fb); padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: var(--ink); min-width: 0; }
+  .controls input[type=search] { flex: 1 1 220px; }
+  .controls label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .tablewrap { overflow-x: auto; background: var(--white); border: 1px solid var(--line); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 700 11.5px var(--fm); letter-spacing: .08em; text-transform: uppercase; color: var(--green); background: var(--surface); position: sticky; top: 0; cursor: pointer; white-space: nowrap; }
+  th.on::after { content: " ▾"; color: var(--gold-deep); }
+  th.on.asc::after { content: " ▴"; }
+  td.n { font-weight: 600; }
+  td.mono { font: 500 13px var(--fm); white-space: nowrap; }
+  td.dim, .dim { color: var(--muted); }
+  .pill { display: inline-block; font: 600 11.5px var(--fb); padding: 2px 8px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); }
+  .pill.active { background: #e6f1ec; border-color: #bfd9cf; color: var(--green); }
+  .new { background: var(--gold); color: var(--ink); border-color: var(--gold-deep); }
+  tr.today td { background: #fdf8ec; }
+  .foot { font-size: 12px; color: var(--muted); margin-top: 10px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .sync { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+  .sync .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); display: inline-block; }
+  .sync .dot.ok { background: var(--green); } .sync .dot.warn { background: var(--gold-deep); } .sync .dot.err { background: var(--red); }
+  .sync input { font: 15px var(--fm); letter-spacing: .2em; width: 120px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; }
+  .hidden { display: none !important; }
+  @media (max-width: 600px) { h1 { font-size: 22px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="wordmark">Drop Shot Play</div>
+    <span class="who" id="who"></span>
+    <button id="btn-in" class="primary">Sign in with Google</button>
+    <button id="btn-out" class="hidden">Sign out</button>
+  </header>
+
+  <h1>Members</h1>
+  <p class="sub">Live, read-only view of sign-ups in the Drop Shot Play app. Nothing on this page can change the data.</p>
+
+  <div id="notice" class="notice hidden"></div>
+
+  <section id="app" class="hidden">
+    <div class="stats">
+      <div class="stat"><b id="s-total">–</b><span>members</span></div>
+      <div class="stat"><b id="s-today">–</b><span>signed up today</span></div>
+      <div class="stat"><b id="s-party">–</b><span>since Oct 9 party</span></div>
+      <div class="stat"><b id="s-shown">–</b><span>shown</span></div>
+    </div>
+    <div class="sync">
+      <span class="dot" id="sync-dot"></span><span id="sync-text">Sync to Drop Shot records: not connected</span>
+      <button id="btn-sync-connect" class="hidden">Connect sync</button>
+      <span id="sync-code" class="hidden"><input id="otp" inputmode="numeric" maxlength="8" placeholder="6-digit code" autocomplete="one-time-code"> <button id="btn-otp" class="primary">Confirm</button></span>
+      <button id="btn-sync-now" class="hidden">Sync now</button>
+    </div>
+    <div class="controls">
+      <input type="search" id="q" placeholder="Search name or phone" autocomplete="off">
+      <label>Since <input type="date" id="since"></label>
+      <label>Tier <select id="tier"><option value="">all</option></select></label>
+      <label>Status <select id="status"><option value="">all</option></select></label>
+      <button id="btn-refresh">Refresh</button>
+    </div>
+    <div class="tablewrap">
+      <table id="t">
+        <thead><tr>
+          <th data-k="createdAt" class="on">Signed up</th>
+          <th data-k="name">Name</th>
+          <th data-k="phone">Phone</th>
+          <th data-k="trustTier">Tier</th>
+          <th data-k="status">Status</th>
+          <th data-k="profileComplete">Profile</th>
+          <th data-k="phoneVerified">Phone ok</th>
+          <th data-k="ratingVisibility">Rating vis.</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="foot"><span id="live">Live updates on</span><span id="phones-note"></span><span>Times shown in your local time.</span></div>
+  </section>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  "use strict";
+  // Public web config of the Drop Shot Play app (same values every visitor's browser receives). Not a secret.
+  var CONFIG = {
+    apiKey: "AIzaSyBemHOgrmmdn417fT3Lkbt2z-VQHwfsjm0",
+    authDomain: "drop-shot-play.firebaseapp.com",
+    projectId: "drop-shot-play",
+    appId: "1:222159772679:web:e96a96893a4a1d594ddea2"
+  };
+  // Only this account may use the page. The real gate is the Firestore rule Malinka sets for the same email.
+  var ALLOWED = ["tarek@dropshotcoffee.us"];
+  var PARTY = new Date(2026, 9, 9, 0, 0, 0); // Oct 9, 2026 local
+  // Drop Shot records (Supabase). Public project key; the mirror table itself accepts nothing from this key alone.
+  // Writes are allowed only for a signed-in session of the owner's email, enforced in the database.
+  var SB_URL = "https://iwufnpzlwxzzedwcrjrk.supabase.co";
+  var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3dWZucHpsd3h6emVkd2NyanJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2MDgzMDAsImV4cCI6MjA5NTE4NDMwMH0.oNSCXHgrZw3L4gG5_bbvQ7Ea7LxS78fj0iDehk9ojpY";
+  var SB_EMAIL = "tarek@dropshotcoffee.us";
+
+  firebase.initializeApp(CONFIG);
+  var auth = firebase.auth(), db = firebase.firestore();
+  var $ = function (id) { return document.getElementById(id); };
+  var players = [], priv = {}, sortK = "createdAt", sortAsc = false, unsub = null, unsubPriv = null;
+
+  function notice(html, err) { var n = $("notice"); n.innerHTML = html; n.className = "notice" + (err ? " err" : ""); }
+  function hideNotice() { $("notice").className = "notice hidden"; }
+
+  $("btn-in").onclick = function () {
+    var p = new firebase.auth.GoogleAuthProvider();
+    p.setCustomParameters({ prompt: "select_account", hd: "dropshotcoffee.us" });
+    auth.signInWithPopup(p).catch(function (e) {
+      if (e && e.code === "auth/unauthorized-domain") {
+        notice("<b>This page's address isn't allowed to sign in yet.</b> In Firebase: Authentication, Settings, Authorized domains, add <code>" + location.hostname + "</code>. (Safe console setting; no code change.)", true);
+      } else if (e && e.code === "auth/operation-not-allowed") {
+        notice("<b>Google sign-in isn't turned on in Firebase yet.</b> Authentication, Sign-in method, enable Google.", true);
+      } else if (e && e.code === "auth/popup-blocked") {
+        auth.signInWithRedirect(p);
+      } else { notice("Sign-in failed: " + (e && e.message || e), true); }
+    });
+  };
+  $("btn-out").onclick = function () { auth.signOut(); };
+
+  auth.onAuthStateChanged(function (u) {
+    stop();
+    if (!u) { $("who").textContent = ""; $("btn-in").classList.remove("hidden"); $("btn-out").classList.add("hidden"); $("app").classList.add("hidden"); hideNotice(); return; }
+    $("btn-in").classList.add("hidden"); $("btn-out").classList.remove("hidden");
+    $("who").textContent = u.email || "";
+    if (ALLOWED.indexOf((u.email || "").toLowerCase()) < 0) {
+      notice("<b>" + (u.email || "this account") + "</b> isn't allowed on this page. Sign out and use the owner account.", true);
+      $("app").classList.add("hidden"); return;
+    }
+    hideNotice(); $("app").classList.remove("hidden"); start(); sbInit();
+  });
+
+  // ---------- Sync to Drop Shot records ----------
+  var sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+  var sbUser = null, syncTimer = null, lastSyncSig = "";
+  function syncUi(state, text) { $("sync-dot").className = "dot " + (state || ""); $("sync-text").textContent = text; }
+  function showSyncControls(connected) {
+    $("btn-sync-connect").classList.toggle("hidden", connected);
+    $("btn-sync-now").classList.toggle("hidden", !connected);
+    $("sync-code").classList.add("hidden");
+  }
+  async function sbInit() {
+    if (!sb) { syncUi("err", "Sync library did not load."); return; }
+    var r = await sb.auth.getSession(); sbUser = r.data && r.data.session ? r.data.session.user : null;
+    if (sbUser && (sbUser.email || "").toLowerCase() !== SB_EMAIL) { await sb.auth.signOut(); sbUser = null; }
+    showSyncControls(!!sbUser);
+    syncUi(sbUser ? "ok" : "warn", sbUser ? "Sync connected as " + sbUser.email : "Sync to Drop Shot records: not connected");
+    sb.auth.onAuthStateChanged(function (ev, sess) { sbUser = sess ? sess.user : null; showSyncControls(!!sbUser); if (sbUser) { syncUi("ok", "Sync connected as " + sbUser.email); scheduleSync(); } });
+    if (sbUser) scheduleSync();
+  }
+  $("btn-sync-connect").onclick = async function () {
+    var r = await sb.auth.signInWithOtp({ email: SB_EMAIL, options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname } });
+    if (r.error) { syncUi("err", "Could not send the code: " + r.error.message); return; }
+    $("btn-sync-connect").classList.add("hidden"); $("sync-code").classList.remove("hidden"); $("otp").focus();
+    syncUi("warn", "An email was sent to " + SB_EMAIL + ". Click its link, or enter the code if it shows one.");
+  };
+  $("btn-otp").onclick = async function () {
+    var code = $("otp").value.trim(); if (!code) return;
+    var r = await sb.auth.verifyOtp({ email: SB_EMAIL, token: code, type: "email" });
+    if (r.error) { syncUi("err", "Code not accepted: " + r.error.message); return; }
+    $("otp").value = "";
+  };
+  $("btn-sync-now").onclick = function () { lastSyncSig = ""; runSync(); };
+  function scheduleSync() { clearTimeout(syncTimer); syncTimer = setTimeout(runSync, 1500); }
+  async function runSync() {
+    if (!sb || !sbUser || !players.length) return;
+    var rows = players.map(function (p) { return {
+      id: p._id, name: p.name || null, created_at: p._created ? p._created.toISOString() : null,
+      updated_at: toDate(p.updatedAt) ? toDate(p.updatedAt).toISOString() : null,
+      trust_tier: p.trustTier || null, status: p.status || null,
+      profile_complete: typeof p.profileComplete === "boolean" ? p.profileComplete : null,
+      phone_verified: typeof p.phoneVerified === "boolean" ? p.phoneVerified : null,
+      rating_visibility: p.ratingVisibility || null, gender: p.gender || null,
+      synced_at: new Date().toISOString(), synced_by: sbUser.email }; });
+    var sig = rows.map(function (r) { return r.id + "|" + r.updated_at + "|" + r.status + "|" + r.trust_tier; }).join(",");
+    if (sig === lastSyncSig) return;
+    syncUi("warn", "Syncing " + rows.length + " members\u2026");
+    for (var i = 0; i < rows.length; i += 200) {
+      var r = await sb.from("dsp_members").upsert(rows.slice(i, i + 200), { onConflict: "id" });
+      if (r.error) { syncUi("err", "Sync failed: " + r.error.message); return; }
+    }
+    lastSyncSig = sig;
+    syncUi("ok", "Synced " + rows.length + " members at " + new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }));
+  }
+
+  function stop() { if (unsub) unsub(); if (unsubPriv) unsubPriv(); unsub = unsubPriv = null; }
+
+  function start() {
+    unsub = db.collection("players").onSnapshot(function (snap) {
+      players = snap.docs.map(function (d) { var x = d.data() || {}; x._id = d.id; x._created = toDate(x.createdAt); return x; });
+      fillFilters(); render(); scheduleSync();
+    }, function (e) {
+      if (e && e.code === "permission-denied") {
+        notice("<b>Firestore refused to show the members list.</b> Malinka hasn't added the read-only rule for <code>tarek@dropshotcoffee.us</code> on <code>players</code> yet. Once he does, press Refresh.", true);
+      } else { notice("Could not load players: " + (e && e.message || e), true); }
+    });
+    // Phones live in playerPrivate (same document id as the player). Optional: the page still works without it.
+    unsubPriv = db.collection("playerPrivate").onSnapshot(function (snap) {
+      priv = {}; snap.docs.forEach(function (d) { priv[d.id] = d.data() || {}; });
+      $("phones-note").textContent = ""; render();
+    }, function (e) {
+      $("phones-note").textContent = e && e.code === "permission-denied" ? "Phones hidden: no read rule on playerPrivate yet." : "Phones unavailable.";
+    });
+  }
+
+  function toDate(v) { if (!v) return null; if (v.toDate) return v.toDate(); if (v.seconds) return new Date(v.seconds * 1000); var d = new Date(v); return isNaN(d) ? null : d; }
+  function phoneOf(id) {
+    var p = priv[id]; if (!p) return "";
+    var keys = Object.keys(p).filter(function (k) { return /phone/i.test(k) && typeof p[k] === "string"; });
+    return keys.length ? p[keys[0]] : "";
+  }
+  function fmt(d) { return d ? d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : ""; }
+  function sameDay(a, b) { return a && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+  function fillFilters() {
+    var tiers = {}, sts = {};
+    players.forEach(function (p) { if (p.trustTier) tiers[p.trustTier] = 1; if (p.status) sts[p.status] = 1; });
+    setOpts($("tier"), Object.keys(tiers).sort()); setOpts($("status"), Object.keys(sts).sort());
+  }
+  function setOpts(sel, vals) {
+    var cur = sel.value; sel.innerHTML = '<option value="">all</option>' + vals.map(function (v) { return '<option value="' + v + '">' + v + "</option>"; }).join("");
+    sel.value = cur;
+  }
+  function filtered() {
+    var q = $("q").value.trim().toLowerCase(), since = $("since").value ? new Date($("since").value + "T00:00:00") : null;
+    var tier = $("tier").value, st = $("status").value;
+    return players.filter(function (p) {
+      var ph = phoneOf(p._id);
+      if (q && ((p.name || "").toLowerCase().indexOf(q) < 0) && ph.replace(/\D/g, "").indexOf(q.replace(/\D/g, "") || "\u0000") < 0) return false;
+      if (since && !(p._created && p._created >= since)) return false;
+      if (tier && p.trustTier !== tier) return false;
+      if (st && p.status !== st) return false;
+      return true;
+    });
+  }
+  function render() {
+    var now = new Date(), rows = filtered();
+    rows.sort(function (a, b) {
+      var va = sortK === "phone" ? phoneOf(a._id) : sortK === "createdAt" ? (a._created || 0) : (a[sortK] == null ? "" : a[sortK]);
+      var vb = sortK === "phone" ? phoneOf(b._id) : sortK === "createdAt" ? (b._created || 0) : (b[sortK] == null ? "" : b[sortK]);
+      var r = va < vb ? -1 : va > vb ? 1 : 0; return sortAsc ? r : -r;
+    });
+    $("s-total").textContent = players.length;
+    $("s-today").textContent = players.filter(function (p) { return sameDay(p._created, now); }).length;
+    $("s-party").textContent = players.filter(function (p) { return p._created && p._created >= PARTY; }).length;
+    $("s-shown").textContent = rows.length;
+    $("rows").innerHTML = rows.map(function (p) {
+      var isNew = p._created && (now - p._created) < 36e5;
+      return "<tr" + (sameDay(p._created, now) ? ' class="today"' : "") + ">" +
+        '<td class="mono">' + esc(fmt(p._created)) + (isNew ? ' <span class="pill new">new</span>' : "") + "</td>" +
+        '<td class="n">' + esc(p.name || "(no name)") + "</td>" +
+        '<td class="mono">' + esc(phoneOf(p._id)) + "</td>" +
+        "<td>" + (p.trustTier ? '<span class="pill">' + esc(p.trustTier) + "</span>" : "") + "</td>" +
+        "<td>" + (p.status ? '<span class="pill' + (p.status === "active" ? " active" : "") + '">' + esc(p.status) + "</span>" : "") + "</td>" +
+        '<td class="dim">' + yn(p.profileComplete) + "</td>" +
+        '<td class="dim">' + yn(p.phoneVerified) + "</td>" +
+        '<td class="dim">' + esc(p.ratingVisibility || "") + "</td></tr>";
+    }).join("");
+    document.querySelectorAll("th").forEach(function (th) { th.className = th.dataset.k === sortK ? "on" + (sortAsc ? " asc" : "") : ""; });
+  }
+  function yn(v) { return v === true ? "yes" : v === false ? "no" : ""; }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  ["q", "since", "tier", "status"].forEach(function (id) { $(id).addEventListener("input", render); $(id).addEventListener("change", render); });
+  document.querySelectorAll("th").forEach(function (th) { th.onclick = function () { var k = th.dataset.k; if (sortK === k) sortAsc = !sortAsc; else { sortK = k; sortAsc = k === "name"; } render(); }; });
+  $("btn-refresh").onclick = function () { hideNotice(); stop(); start(); };
+})();
+</script>
+</body>
+</html>
